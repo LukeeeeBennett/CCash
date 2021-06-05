@@ -125,6 +125,10 @@ public:
             callback(resp);
         }
     }
+    void GetLeaderboard(req_args)
+    {
+        JSON(bank.GetLeaderboard());
+    }
 
     METHOD_LIST_BEGIN
     METHOD_ADD(BankF::Close, "/admin/close", Post, Options);
@@ -141,6 +145,7 @@ public:
     METHOD_ADD(BankF::GetBal, "/{name}/bal", Get, Options);
     METHOD_ADD(BankF::AdminVerifyPass, "/admin/vpass", Post, Options);
     METHOD_ADD(BankF::GetLog, "/{name}/log", Post, Options);
+    METHOD_ADD(BankF::GetLeaderboard, "/board", Get, Options);
 
     METHOD_ADD(BankF::DelUser, "/user", Delete, Options);
     METHOD_ADD(BankF::AdminDelUser, "/admin/user", Delete, Options);

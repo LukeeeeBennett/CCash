@@ -17,6 +17,8 @@ private:
         std::mutex>
         users;
 
+    Json::Value snapshot;
+
     /**
      * @brief size_l should be grabbed if the operation MODIFIES the size (shared), this is so that when save claims unique
      * 
@@ -195,6 +197,7 @@ public:
         }
         return res;
     }
+    Json::Value GetLeaderboard() const { return snapshot; }
 
     void Save()
     {
@@ -203,17 +206,31 @@ public:
 
         std::ofstream user_save("../users.json");
         Json::Value temp;
+        snapshot = Json::Value();
+        using Ranking = std::pair<std::string, uint32_t>;
+        std::vector<Ranking> snapshot_vec;
 
         //loading info into json temp
         {
             std::scoped_lock<std::shared_mutex, std::shared_mutex> lock{size_l, send_funds_l};
+            snapshot_vec.reserve(users.size());
             for (const auto &u : users)
             {
                 //we know it contains this key but we call this func to grab mutex
-                users.if_contains(u.first, [&temp, &u](const User &u_val) {
+                users.if_contains(u.first, [&snapshot_vec, &temp, &u](const User &u_val) {
                     temp[u.first] = u_val.Serialize();
+                    snapshot_vec.push_back({u.first, u_val.balance});
                 });
             }
+        }
+        //sorting snapshot
+        std::sort(snapshot_vec.begin(), snapshot_vec.end(), [](const Ranking &a, const Ranking &b) {
+            return a.second > b.second;
+        });
+        for (uint32_t i = 0; i < snapshot_vec.size(); ++i)
+        {
+            snapshot[i]["name"] = std::move(snapshot_vec[i].first);
+            snapshot[i]["balance"] = snapshot_vec[i].second;
         }
         if (!temp.isNull())
         {
